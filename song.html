@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>가사 한 소절</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202b;
+  --paper:#f5f0e4;
+  --paper-deep:#e8dfc9;
+  --vermilion:#c9452f;
+  --indigo:#2f5d7c;
+  --gold:#d9a441;
+  --line:rgba(22,32,43,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Zen Maru Gothic','Gowun Dodum',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.screen{display:none;height:100vh}
+.screen.on{display:flex}
+
+/* ---------- setup ---------- */
+#setup{flex-direction:column;align-items:center;justify-content:center;gap:2.4rem;padding:2rem}
+.brand{text-align:center;line-height:1.15}
+.brand .ja{font-size:clamp(2.2rem,6vw,4.2rem);font-weight:900;letter-spacing:.04em}
+.brand .ja span{color:var(--vermilion)}
+.brand .ko{margin-top:.6rem;font-size:clamp(.95rem,1.6vw,1.25rem);color:rgba(22,32,43,.6)}
+.teamform{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center}
+.teamfield{display:flex;flex-direction:column;gap:.5rem}
+.teamfield label{font-size:.9rem;color:rgba(22,32,43,.55)}
+.teamfield input{
+  font-family:inherit;font-size:1.5rem;font-weight:700;padding:.7rem 1.1rem;width:min(19rem,78vw);
+  background:#fff;border:2px solid var(--line);border-radius:.7rem;color:var(--ink);
+}
+.teamfield input:focus{outline:none;border-color:var(--indigo)}
+#f1:focus{border-color:var(--vermilion)}
+.start{
+  background:var(--ink);color:var(--paper);font-size:1.35rem;font-weight:700;
+  padding:1rem 3.4rem;border-radius:999px;letter-spacing:.04em;
+}
+.start:hover{background:var(--vermilion)}
+.hint-line{font-size:.9rem;color:rgba(22,32,43,.5);text-align:center;line-height:1.9}
+kbd{
+  font-family:inherit;font-weight:700;background:var(--paper-deep);
+  border-radius:.35rem;padding:.12rem .5rem;font-size:.85em;
+}
+
+/* ---------- board ---------- */
+#board{flex-direction:column;padding:1.6vh 2vw}
+.scores{display:flex;gap:1.2vw;flex-shrink:0}
+.team{
+  flex:1;background:#fff;border-radius:1rem;padding:1.1vh 1.6vw;
+  display:flex;align-items:center;justify-content:space-between;
+  border:3px solid transparent;transition:transform .12s;
+}
+.team.a{border-color:var(--vermilion)}
+.team.b{border-color:var(--indigo)}
+.team.bump{transform:scale(1.04)}
+.team .nm{font-size:clamp(1rem,2.1vw,1.9rem);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team .sc{font-size:clamp(1.8rem,4.4vw,3.6rem);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.team.a .sc{color:var(--vermilion)}
+.team.b .sc{color:var(--indigo)}
+
+.meta{display:flex;align-items:center;justify-content:space-between;padding:1.2vh .3vw .8vh;flex-shrink:0}
+.lvl{font-size:clamp(.8rem,1.5vw,1.1rem);font-weight:700;padding:.3rem 1rem;border-radius:999px;background:var(--paper-deep)}
+.lvl[data-l="초급"]{background:#dbead9;color:#33612c}
+.lvl[data-l="중급"]{background:#dee6ef;color:#2f5d7c}
+.lvl[data-l="상급"]{background:#f2dcd7;color:#a3341f}
+.count{font-size:clamp(.8rem,1.5vw,1.1rem);color:rgba(22,32,43,.5);font-variant-numeric:tabular-nums}
+
+.stage{
+  flex:1;min-height:0;display:flex;gap:1.6vw;align-items:stretch;
+}
+.pic{
+  flex:1;min-width:0;background:#fff;border-radius:1.2rem;
+  display:flex;align-items:center;justify-content:center;overflow:auto;position:relative;
+  padding:3vh 3vw;
+}
+.lyric{
+  font-family:'Nanum Myeongjo',serif;
+  font-size:clamp(1.15rem,2.3vw,1.9rem);
+  line-height:1.9;
+  color:var(--ink);
+  white-space:pre-line;
+  text-align:left;
+}
+.lyric::before{content:'\201C';color:var(--gold);font-size:1.4em;margin-right:.05em}
+.lyric::after{content:'\201D';color:var(--gold);font-size:1.4em;margin-left:.05em}
+.side{width:min(34vw,30rem);display:flex;flex-direction:column;gap:1.1vh;min-width:0}
+.hint{
+  background:#fff;border-radius:.85rem;padding:1.5vh 1.3vw;
+  font-size:clamp(1rem,2vw,1.75rem);font-weight:500;line-height:1.4;
+  border-left:8px solid var(--gold);
+  opacity:0;transform:translateY(8px);transition:opacity .22s,transform .22s;
+}
+.hint.show{opacity:1;transform:none}
+.hint .tag{display:block;font-size:.62em;color:rgba(22,32,43,.45);margin-bottom:.2em;font-weight:700}
+
+.reveal{display:flex;flex-direction:column;align-items:center;gap:1.4vh;width:100%;max-width:30rem}
+.reveal .cover-wrap{
+  width:min(44vh,24vw,19rem);height:min(44vh,24vw,19rem);position:relative;
+  border-radius:1rem;overflow:hidden;box-shadow:0 0 0 1px var(--line);flex-shrink:0;
+}
+.reveal .cover-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.reveal .cover-wrap .empty{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  font-size:1rem;color:rgba(22,32,43,.35);text-align:center;background:var(--paper-deep);
+}
+.reveal .cover-wrap.no-cover img{display:none}
+.reveal .cover-wrap.no-cover .empty{display:flex}
+.reveal .title{font-size:clamp(1.5rem,3.6vw,2.6rem);font-weight:900;text-align:center;line-height:1.3}
+.reveal .artist{font-size:clamp(.95rem,1.9vw,1.35rem);color:var(--gold);font-weight:700;text-align:center}
+.reveal audio{width:100%;max-width:26rem;margin-top:.3rem}
+.audio-warn{display:none;font-size:.8rem;color:var(--vermilion);margin-top:.2rem;text-align:center;line-height:1.4}
+.audio-warn.show{display:block}
+
+.bar{
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:1.4vw;
+  padding-top:1.2vh;font-size:clamp(.7rem,1.25vw,.95rem);color:rgba(22,32,43,.45);flex-wrap:wrap;
+}
+.bar b{font-weight:700;color:rgba(22,32,43,.7)}
+
+/* ---------- picker ---------- */
+#picker{
+  position:fixed;inset:0;background:rgba(22,32,43,.55);z-index:50;
+  display:none;align-items:center;justify-content:center;padding:4vh 3vw;
+}
+#picker.on{display:flex}
+.sheet{
+  background:var(--paper);border-radius:1.4rem;width:min(60rem,94vw);max-height:92vh;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sheet header{display:flex;gap:.6rem;padding:1.2rem 1.4rem .9rem;align-items:center}
+.tab{
+  font-size:1.05rem;font-weight:700;padding:.55rem 1.5rem;border-radius:999px;
+  background:var(--paper-deep);color:rgba(22,32,43,.55);
+}
+.tab.on{background:var(--ink);color:var(--paper)}
+.sheet header .x{margin-left:auto;font-size:1.7rem;line-height:1;color:rgba(22,32,43,.4);padding:0 .5rem}
+.grid{
+  overflow-y:auto;padding:0 1.4rem 1.4rem;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.7rem;
+}
+.cell{
+  background:#fff;border-radius:.8rem;padding:.85rem 1rem;text-align:left;
+  border:2px solid transparent;
+}
+.cell:hover{border-color:var(--indigo)}
+.cell.done{opacity:.42}
+.cell .n{font-size:.75rem;color:rgba(22,32,43,.4);font-weight:700}
+.cell .w{font-size:1.25rem;font-weight:700;margin-top:.15rem}
+.cell .k{font-size:.8rem;color:rgba(22,32,43,.5);margin-top:.1rem}
+.empty{grid-column:1/-1;text-align:center;padding:3rem 1rem;color:rgba(22,32,43,.4);font-size:1rem;line-height:1.9}
+</style>
+</head>
+<body>
+
+<section id="setup" class="screen on">
+  <div class="brand">
+    <div class="ja">가사 <span>한 소절</span></div>
+    <div class="ko">풀어쓴 가사로 노래 맞히기 · 5주년 파티</div>
+  </div>
+  <div class="teamform">
+    <div class="teamfield"><label for="f1">1팀 이름</label><input id="f1" value="さくら" maxlength="14"></div>
+    <div class="teamfield"><label for="f2">2팀 이름</label><input id="f2" value="ふじ" maxlength="14"></div>
+  </div>
+  <button class="start" id="go">시작하기</button>
+  <p class="hint-line">
+    <kbd>P</kbd> 문제 고르기 · <kbd>Space</kbd> 힌트 → 정답 · <kbd>Enter</kbd> 바로 정답<br>
+    <kbd>1</kbd> <kbd>2</kbd> 점수 +1 · <kbd>Shift</kbd>+<kbd>1</kbd>/<kbd>2</kbd> 점수 −1 · <kbd>←</kbd>/<kbd>→</kbd> 이전·다음 문제
+  </p>
+</section>
+
+<section id="board" class="screen">
+  <div class="scores">
+    <div class="team a" id="ta"><span class="nm" id="n1">さくら</span><span class="sc" id="s1">0</span></div>
+    <div class="team b" id="tb"><span class="nm" id="n2">ふじ</span><span class="sc" id="s2">0</span></div>
+  </div>
+  <div class="meta">
+    <span class="lvl" id="lvl" data-l="초급">초급</span>
+    <span class="count" id="cnt">1 / 1</span>
+  </div>
+  <div class="stage">
+    <div class="pic" id="pic"></div>
+    <div class="side">
+      <div class="hint" id="h0"></div>
+      <div class="hint" id="h1"></div>
+      <div class="hint" id="h2"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <span><b>Space</b> 힌트 · <b>Enter</b> 정답</span>
+    <span><b>1</b>/<b>2</b> 득점 · <b>Shift+1</b>/<b>2</b> 감점</span>
+    <span><b>←</b> 이전 · <b>→</b> 다음 · <b>P</b> 문제표</span>
+  </div>
+</section>
+
+<div id="picker">
+  <div class="sheet">
+    <header>
+      <button class="tab on" data-t="초급">초급</button>
+      <button class="tab" data-t="중급">중급</button>
+      <button class="tab" data-t="상급">상급</button>
+      <button class="x" id="close" aria-label="닫기">&times;</button>
+    </header>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<script src="songs.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let cur = null, step = 0, tab = '초급';
+const score = [0, 0];
+const done = new Set();
+let history = [];
+let histPos = -1;
+
+const AUDIO_FOLDERS = ['music/', 'audio/', 'songs/', 'mp3/', ''];
+const COVER_FOLDERS = ['covers/', 'music/', 'cover/', 'images/', ''];
+const COVER_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+
+function bareName(file){ return file.replace(/\.mp3$/i, ''); }
+
+function resolveAudio(sndEl, warnEl, file){
+  warnEl.classList.remove('show');
+  sndEl.pause();
+  if(!file){ sndEl.removeAttribute('src'); return; }
+  let i = 0;
+  function tryNext(){
+    if(i >= AUDIO_FOLDERS.length){ warnEl.classList.add('show'); return; }
+    const path = AUDIO_FOLDERS[i] + file;
+    i++;
+    sndEl.onerror = tryNext;
+    sndEl.src = path;
+    sndEl.play().catch(() => {});
+  }
+  tryNext();
+}
+
+function resolveCover(wrapEl, imgEl, file){
+  wrapEl.classList.remove('no-cover');
+  if(!file){ wrapEl.classList.add('no-cover'); return; }
+  const b = bareName(file);
+  const candidates = [];
+  COVER_FOLDERS.forEach(folder => COVER_EXTS.forEach(ext => candidates.push(folder + b + '.' + ext)));
+  let i = 0;
+  function tryNext(){
+    if(i >= candidates.length){ wrapEl.classList.add('no-cover'); return; }
+    const path = candidates[i];
+    i++;
+    imgEl.onerror = tryNext;
+    imgEl.onload = () => wrapEl.classList.remove('no-cover');
+    imgEl.src = path;
+  }
+  tryNext();
+}
+
+function render(){
+  if(!cur) return;
+  $('lvl').textContent = cur.level;
+  $('lvl').dataset.l = cur.level;
+  const pool = SONGS.filter(q => q.level === cur.level);
+  $('cnt').textContent = (pool.indexOf(cur) + 1) + ' / ' + pool.length;
+
+  cur.hints.forEach((h, i) => {
+    const el = $('h' + i);
+    el.innerHTML = '<span class="tag">힌트 ' + (i + 1) + '</span>' + h;
+    el.classList.toggle('show', step > i);
+  });
+  for(let i = cur.hints.length; i < 3; i++) $('h' + i).classList.remove('show');
+
+  const open = step > cur.hints.length;
+
+  if(!open){
+    $('pic').innerHTML = '<div class="lyric">' + (cur.lyric || '가사를 여기에 넣어주세요') + '</div>';
+    return;
+  }
+
+  $('pic').innerHTML =
+    '<div class="reveal">' +
+      '<div class="cover-wrap" id="rcoverwrap">' +
+        '<img id="rcoverimg" alt="">' +
+        '<div class="empty" id="rcoverempty">커버<br>없음</div>' +
+      '</div>' +
+      '<div class="title">' + (cur.title || '') + '</div>' +
+      '<div class="artist">' + (cur.artist || '') + '</div>' +
+      '<audio id="rsound" controls></audio>' +
+      '<div class="audio-warn" id="rwarn">오디오 파일을 못 찾았어요 — 폴더 안 파일명을 확인해주세요</div>' +
+    '</div>';
+
+  resolveCover($('rcoverwrap'), $('rcoverimg'), cur.file);
+  resolveAudio($('rsound'), $('rwarn'), cur.file);
+
+  done.add(cur.id);
+}
+
+function load(q){ cur = q; step = 0; render(); }
+
+function visit(q){
+  history = history.slice(0, histPos + 1);
+  history.push(q);
+  histPos = history.length - 1;
+  load(q);
+}
+
+function prev(){
+  if(histPos > 0){
+    histPos--;
+    load(history[histPos]);
+  }
+}
+
+function bump(i, d){
+  score[i] = Math.max(0, score[i] + d);
+  $('s' + (i + 1)).textContent = score[i];
+  const t = $(i === 0 ? 'ta' : 'tb');
+  t.classList.add('bump');
+  setTimeout(() => t.classList.remove('bump'), 130);
+}
+
+function next(){
+  const pool = SONGS.filter(q => q.level === cur.level);
+  const rest = pool.filter(q => !done.has(q.id));
+  if(rest.length) visit(rest[0]);
+  else openPicker();
+}
+
+function grid(){
+  const pool = SONGS.filter(q => q.level === tab);
+  $('grid').innerHTML = pool.length ? pool.map((q, i) =>
+    '<button class="cell' + (done.has(q.id) ? ' done' : '') + '" data-id="' + q.id + '">' +
+    '<span class="n">' + (i + 1) + '</span>' +
+    '<div class="w">문제 ' + (i + 1) + '</div>' +
+    '<div class="k">' + (q.hints && q.hints[0] ? q.hints[0] : '') + '</div></button>'
+  ).join('') : '<div class="empty">이 난이도에 등록된 노래가 없어요<br>songs.js에 추가해주세요</div>';
+}
+
+function openPicker(){ grid(); $('picker').classList.add('on'); }
+
+$('go').onclick = () => {
+  $('n1').textContent = $('f1').value.trim() || '1팀';
+  $('n2').textContent = $('f2').value.trim() || '2팀';
+  $('setup').classList.remove('on');
+  $('board').classList.add('on');
+  if(SONGS.length) visit(SONGS[0]);
+  openPicker();
+};
+
+$('close').onclick = () => $('picker').classList.remove('on');
+
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  tab = b.dataset.t;
+  grid();
+});
+
+$('grid').onclick = e => {
+  const c = e.target.closest('.cell');
+  if(!c) return;
+  $('picker').classList.remove('on');
+  visit(SONGS.find(q => q.id === c.dataset.id));
+};
+
+document.addEventListener('keydown', e => {
+  if(!$('board').classList.contains('on')) return;
+  if(e.target.tagName === 'INPUT') return;
+  const k = e.key;
+
+  if(k === 'p' || k === 'P' || k === 'ㅔ'){ e.preventDefault(); $('picker').classList.contains('on') ? $('picker').classList.remove('on') : openPicker(); return; }
+  if($('picker').classList.contains('on')){ if(k === 'Escape') $('picker').classList.remove('on'); return; }
+
+  if(k === ' '){ e.preventDefault(); if(step <= cur.hints.length){ step++; render(); } return; }
+  if(k === 'Enter'){ e.preventDefault(); step = cur.hints.length + 1; render(); return; }
+  if(k === 'ArrowRight'){ e.preventDefault(); next(); return; }
+  if(k === 'ArrowLeft'){ e.preventDefault(); prev(); return; }
+  if(k === '1'){ bump(0, 1); return; }
+  if(k === '2'){ bump(1, 1); return; }
+  if(k === '!'){ bump(0, -1); return; }
+  if(k === '@'){ bump(1, -1); return; }
+});
+</script>
+</body>
+</html>
